@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hologram Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B140E;--lime:#9DFF2E;--txt:#E8FFD0;--mut:#8FB38A;--panel:#101A14;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--txt);font-family:Rajdhani,system-ui,sans-serif;font-size:16px;display:flex;align-items:center;justify-content:center;overflow-x:hidden}
+.stage{position:relative;width:min(100%,640px);display:flex;flex-direction:column}
+.screen{position:relative;z-index:4;height:clamp(240px,38vh,340px);padding:14px 22px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-shadow:0 0 12px rgba(157,255,46,.7);overflow-y:auto;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+.screen.open{justify-content:flex-start;padding-top:22px}
+.ic svg{width:64px;height:64px;fill:none;stroke:var(--lime);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 8px var(--lime))}
+h1,h2{font-family:Orbitron,sans-serif;font-weight:700;color:var(--lime);margin:8px 0;letter-spacing:4px}
+h1{font-size:clamp(24px,7vw,32px)}h2{font-size:clamp(20px,5.5vw,26px);letter-spacing:3px}
+p{margin:6px 0;line-height:1.5}.mut,.hint{color:var(--mut);font-size:14px;letter-spacing:2px;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;margin-top:10px}
+.card{border:1px solid rgba(157,255,46,.45);background:rgba(157,255,46,.07);border-radius:10px;padding:10px;font-size:15px}
+.card b{display:block;color:var(--lime);font-weight:600}
+.flick{animation:flick .45s steps(1,end)}
+@keyframes flick{0%{opacity:.15;transform:translateY(6px) skewX(5deg)}25%{opacity:1}40%{opacity:.4;transform:translateX(-4px)}60%{opacity:1;transform:none}75%{opacity:.6}100%{opacity:1}}
+.dwrap{position:relative;width:100%;height:300px}
+.device{position:absolute;left:50%;top:50%;transform-origin:center;touch-action:none}
+.device img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.facewrap{position:absolute;left:72.83%;top:11.99%;width:34.69%;aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%) scaleY(.5);transition:transform .12s,filter .12s;z-index:2}
+.facewrap canvas{width:100%;height:100%;display:block}
+.facewrap::after{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(200,255,90,.5),transparent 70%);mix-blend-mode:screen;animation:pulse 2s ease-in-out infinite;pointer-events:none}
+@keyframes pulse{0%,100%{opacity:.05}50%{opacity:.4}}
+.press .facewrap{transform:translate(-50%,-44%) scaleY(.5) scale(.93);filter:brightness(1.7)}
+.beam{position:absolute;inset:0;z-index:3;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.22) 0 1px,transparent 1px 4px),linear-gradient(to top,rgba(157,255,46,.36),rgba(157,255,46,.05));animation:bflick 3s infinite}
+@keyframes bflick{0%,100%{opacity:1}45%{opacity:.85}50%{opacity:.7}55%{opacity:.95}}
+.hit{position:absolute;left:49.1%;top:.8%;width:50.3%;height:34.4%;border-radius:50%;z-index:5;cursor:grab;touch-action:none;outline:none}
+.hit:focus-visible{box-shadow:0 0 0 2px var(--lime)}
+.hit:active{cursor:grabbing}
+.hud{display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 0 8px}
+.hud button{font:600 15px Rajdhani,sans-serif;letter-spacing:2px;color:var(--lime);background:var(--panel);border:1px solid rgba(157,255,46,.5);border-radius:999px;padding:10px 18px;min-height:44px;cursor:pointer}
+.hud button:hover{background:#1b2a1f}
+.tip{text-align:center;color:var(--mut);font-size:13px;letter-spacing:1px;padding-bottom:12px}
+.flash{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;background:radial-gradient(circle at 70% 20%,#e6ffb0,#9DFF2E 60%);transition:opacity .22s}
+</style>
+</head>
+<body>
+<main class="stage" id="stage">
+  <section class="screen" id="screen" aria-live="polite"><div id="content"></div></section>
+  <div class="beam" id="beam"></div>
+  <div class="dwrap" id="dwrap"><div class="device" id="device">
+    <img id="img" alt="Sci-fi wrist device with a rotating dial" src="watch.png">
+    <div class="facewrap" id="facewrap"><canvas id="cv" width="544" height="544"></canvas></div>
+    <div class="hit" id="hit" tabindex="0" role="button" aria-label="Dial: drag to rotate, press to open"></div>
+  </div></div>
+  <nav class="hud">
+    <button id="prev" aria-label="Previous page">&#8592;</button>
+    <button id="open" aria-label="Open selected page">OPEN</button>
+    <button id="next" aria-label="Next page">&#8594;</button>
+  </nav>
+  <div class="tip">Drag the dial, scroll, or use ← → · tap the dial to open</div>
+</main>
+<div class="flash" id="flash"></div>
+<script>
+const D={name:'YOUR NAME',title:'Frontend Developer',tagline:'I build things that feel alive.',
+about:'Write two or three lines about yourself here. Where you’re from, what you build, and what you love.',
+skills:['HTML','CSS','JavaScript','React','Three.js','Figma'],
+projects:[['Shop app','E-commerce UI'],['Weather','API dashboard'],['Chat app','Realtime'],['Portfolio','This site']],
+email:'you@example.com',links:['GitHub','LinkedIn','Instagram']};
+const I=p=>`<svg viewBox="0 0 24 24">${p}</svg>`;
+const PAGES=[
+{name:'HOME',icon:I('<path d="M3 11l9-8 9 8M5 10v10h14V10"/>'),html:()=>`<h2>${D.name}</h2><p>${D.title}</p><p class="mut">${D.tagline}</p>`},
+{name:'ABOUT',icon:I('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>'),html:()=>`<h2>ABOUT</h2><p>${D.about}</p>`},
+{name:'SKILLS',icon:I('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),html:()=>`<h2>SKILLS</h2><div class="grid">${D.skills.map(s=>`<div class="card">${s}</div>`).join('')}</div>`},
+{name:'PROJECTS',icon:I('<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>'),html:()=>`<h2>PROJECTS</h2><div class="grid">${D.projects.map(p=>`<div class="card"><b>${p[0]}</b>${p[1]}</div>`).join('')}</div>`},
+{name:'CONTACT',icon:I('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>'),html:()=>`<h2>CONTACT</h2><p>${D.email}</p><p class="mut">${D.links.join(' · ')}</p>`}];
+const $=id=>document.getElementById(id),mod=(n,m)=>((n%m)+m)%m;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SRC={cx:571,cy:74,rx:136,ry:68},IW=784,IH=617;
+const TILT=22; /* degrees the whole watch is turned clockwise to look straighter. 0 = original angle, try 15 to 30 */
+let ang=0,idx=0,mode='preview',pressing=false,raf=0,actx=null;
+function drawFace(){const c=$('cv').getContext('2d'),im=$('img'),S=544;c.save();c.beginPath();c.arc(S/2,S/2,S/2,0,Math.PI*2);c.clip();c.drawImage(im,SRC.cx-SRC.rx,SRC.cy-SRC.ry,SRC.rx*2,SRC.ry*2,0,0,S,S);c.restore()}
+function tick(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=1300;g.gain.value=.03;g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+.03);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.035)}catch(e){}}
+function render(flick){const p=PAGES[idx],ct=$('content'),sc=$('screen');
+ct.innerHTML=mode==='preview'?`<div class="ic">${p.icon}</div><h1>${p.name}</h1><p class="hint">Tap the dial to open</p>`:p.html();
+sc.classList.toggle('open',mode==='open');sc.scrollTop=0;
+if(flick&&!reduce){ct.classList.remove('flick');void ct.offsetWidth;ct.classList.add('flick')}
+$('open').textContent=(mode==='open'?'BACK · ':'OPEN · ')+p.name}
+function setAngle(a){ang=a;$('cv').style.transform=`rotate(${a}deg)`;
+if(!pressing){const i=mod(Math.round(a/72),5);if(i!==idx){idx=i;mode='preview';tick();render(true)}}}
+const easeBack=t=>1+2.4*Math.pow(t-1,3)+1.4*Math.pow(t-1,2),easeOut=t=>1-Math.pow(1-t,3);
+function animate(to,dur,ease,done){cancelAnimationFrame(raf);const from=ang,t0=performance.now();
+(function f(n){const t=Math.min(1,(n-t0)/dur);setAngle(from+(to-from)*ease(t));if(t<1)raf=requestAnimationFrame(f);else if(done)done()})(t0)}
+const snapTo=t=>animate(t,reduce?1:240,easeBack);
+const step=d=>{if(pressing)return;snapTo((Math.round(ang/72)+d)*72)};
+function press(){if(pressing)return;pressing=true;$('device').classList.add('press');
+$('flash').style.opacity=reduce?.2:.8;
+setTimeout(()=>{mode=mode==='open'?'preview':'open';render(true);$('flash').style.opacity=0},reduce?50:250);
+animate(ang+360,reduce?1:520,easeOut,()=>{pressing=false;$('device').classList.remove('press');tick()})}
+function layout(){const stW=$('stage').clientWidth,r=TILT*Math.PI/180,c=Math.cos(r),s=Math.sin(r),ar=IH/IW;
+const devW=stW/(c+ar*s);$('device').style.width=devW+'px';$('device').style.transform=`translate(-50%,-50%) rotate(${TILT}deg)`;$('dwrap').style.height=devW*(s+ar*c)+'px';
+const st=$('stage').getBoundingClientRect(),f=$('facewrap').getBoundingClientRect(),sc=$('screen').getBoundingClientRect();
+const cx=(f.left+f.right)/2-st.left,cy=(f.top+f.bottom)/2-st.top,rx=$('facewrap').offsetWidth/2*.7,by=cy-$('facewrap').offsetWidth/4*.5;
+const L=sc.left-st.left+10,R=sc.right-st.left-10,T=sc.top-st.top+6;
+$('beam').style.clipPath=`polygon(${cx-rx}px ${by}px,${cx+rx}px ${by}px,${R}px ${T}px,${L}px ${T}px)`}
+const hit=$('hit');let drag=null;
+const pAng=e=>{const f=$('facewrap').getBoundingClientRect(),dx=e.clientX-(f.left+f.right)/2,dy=e.clientY-(f.top+f.bottom)/2,r=TILT*Math.PI/180,c=Math.cos(r),s=Math.sin(r);return Math.atan2((-dx*s+dy*c)*2,dx*c+dy*s)*180/Math.PI};
+hit.addEventListener('pointerdown',e=>{if(pressing)return;hit.setPointerCapture(e.pointerId);cancelAnimationFrame(raf);drag={a:pAng(e),moved:0,x:e.clientX,y:e.clientY,dist:0}});
+hit.addEventListener('pointermove',e=>{if(!drag)return;const a=pAng(e);let d=a-drag.a;if(d>180)d-=360;if(d<-180)d+=360;drag.a=a;drag.moved+=Math.abs(d);drag.dist=Math.hypot(e.clientX-drag.x,e.clientY-drag.y);setAngle(ang+d)});
+const end=()=>{if(!drag)return;const d=drag;drag=null;if(d.moved<4&&d.dist<6)press();else snapTo(Math.round(ang/72)*72)};
+hit.addEventListener('pointerup',end);hit.addEventListener('pointercancel',end);
+let wt=0;hit.addEventListener('wheel',e=>{e.preventDefault();const n=Date.now();if(n-wt<200)return;wt=n;step(e.deltaY>0?1:-1)},{passive:false});
+hit.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();step(1)}else if(e.key==='ArrowLeft'){e.preventDefault();step(-1)}else if(e.key==='Enter'||e.key===' '){e.preventDefault();press()}});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&mode==='open')press();if(document.activeElement===document.body){if(e.key==='ArrowRight')step(1);if(e.key==='ArrowLeft')step(-1)}});
+$('prev').onclick=()=>step(-1);$('next').onclick=()=>step(1);$('open').onclick=press;
+addEventListener('resize',layout);
+const im=$('img');layout();const go=()=>{drawFace();layout();render(false)};
+if(im.complete)go();else im.onload=go;
+addEventListener('load',layout);
+</script>
+</body>
+</html>
